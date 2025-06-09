@@ -1,0 +1,50 @@
+module top_module(
+    input clk,
+    input in,
+    input reset,    // Synchronous reset
+    output done
+);  
+    //declaring states
+	//parameter idle  = 3'b000;
+    parameter start = 2'b00;
+    parameter data  = 2'b01;
+    parameter received  = 2'b11;
+    parameter WAIT  = 2'b10;
+    //declaring current state and next state variables
+    reg [2:0]state;
+    reg [2:0]next_state;
+    //state register logic
+    always@(posedge clk) begin
+        if(reset)
+            state <= start;
+        else
+            state <= next_state;
+    end
+    //state transition logic
+    always@(*) begin
+        case(state)
+            //idle : next_state = (~in) ? start : idle ;
+            start	 : next_state = (in) ? start : data ;
+            data     : next_state = (count == 4'b1000 ) ? ((in)? received : WAIT) : data ;
+            WAIT     : next_state = (in) ? start : WAIT ;
+            received : next_state = (in) ? start : data;
+            
+            default:next_state = start ;
+        endcase
+    end
+      // control counter logic to exit data logic
+                reg [3:0] count;
+                always@(posedge clk) begin  
+                    if(reset)
+                        count <= 4'b0;
+                    else 
+                        begin
+                            if (state == data && count <= 4'd8) 
+                                count <= count + 4'b0001;
+                            else 
+                                count <= 4'b0;
+                        end
+                end
+      // output logic
+    assign done = (state == received) ? 1:0;
+endmodule
